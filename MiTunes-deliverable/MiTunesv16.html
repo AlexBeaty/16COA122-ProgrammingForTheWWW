@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+<!--
+MiTunes - Alex Beaty
+B617068
+coab
+-->
+    
+<head> <!--This is the head of the html doc, javascript functions definitions and CSS styling should be made in here -->
+    <script type="text/javascript" src="music.js" ></script><!--Loads the data structure under var albums from the music.js file -->
+
+    <script> //Javascript functions defined within script tags within head tags
+
+        //when a button on the on-screen keyboard is pressed, concatenates the corresponding letter into the search container
+        function inputLetter(x){
+            document.getElementById('search-container').value += x;
+            doSearch();
+        }
+
+        //displays all tracks from all albums where either the track title or track lyrics contain the string obtained from the search container
+        function doSearch(){
+            var searchText = document.getElementById("search-container").value;
+            document.getElementById("do-search-select").innerHTML = "";
+            //if the string in search container contains less than two characters do not search, move do search container div behind main panel divs
+            if(searchText.length < 2){
+                document.getElementById("search-container").style.borderColor = "red";
+                document.getElementById("do-search-container").style.zIndex = "-1";
+            }
+            //if string is at least two characters bring do search container div to front and populate select with all tracks that contain searched for string
+            else {
+                document.getElementById("search-container").style.borderColor = "green";
+                document.getElementById("do-search-container").style.zIndex = "1";
+                document.getElementById("player").innerHTML = "";
+                for(var x=0;x<albums.length;x++){
+                    for(var y=0;y<albums[x].tracks.length;y++){
+                        upperTitle = albums[x].tracks[y].title.toUpperCase();
+                        upperLyrics = albums[x].tracks[y].lyrics.toUpperCase();
+                        if(upperTitle.indexOf(searchText) != -1 || upperLyrics.indexOf(searchText) != -1){
+                            document.getElementById("do-search-select").innerHTML += "<option>"+albums[x].tracks[y].title+": "+albums[x].tracks[y].lyrics+"</option>";
+                        }
+                    }
+                }
+            }     
+        }
+
+        //following doSearch(), if a track is selected from those searched for then generate corresponding player(artwork,audio,lyrics)
+        function getSearchedPlayer(){
+            //use value of selectedindex in select to obtain track title, then search through music.js to find matching file extension
+            document.getElementById("player").innerHTML = "";
+            var searchedStr = document.getElementById("do-search-select").options[document.getElementById("do-search-select").selectedIndex].text;
+            var searchedStrColon = searchedStr.indexOf(":");
+            var searchedSubStr = searchedStr.substring(0,searchedStrColon);
+
+            for(var i=0;i<albums.length;i++){
+                for(var j=0;j<albums[i].tracks.length;j++){
+                    if(albums[i].tracks[j].title == searchedSubStr){
+                        var albumIndex = i;
+                        var trackIndex = j;
+                    }
+                }
+            }
+
+            //generate corresponding player by concatenating first artwork, then audio, then lyrics to the empty player object
+            var searchedCurArt = albums[albumIndex].artwork;
+            document.getElementById("player").innerHTML += "<img src='artwork/"+searchedCurArt+".jpg' alt='"+searchedCurArt+"'>";
+
+            //retrieve file exensions for audio, manipulate string to accomodate .wav file extension as well
+            var searchedCurAlbum = albums[albumIndex].title;
+            var searchedCurAudio = albums[albumIndex].tracks[trackIndex].mp3;
+            var searchedCurAudioWav = searchedCurAudio.substring(0,(searchedCurAudio.indexOf("."))) + ".wav";
+            document.getElementById("player").innerHTML += "<audio controls='controls'><source src='audio/BBC/"+searchedCurAlbum+"/"+searchedCurAudio+"' type='audio/mpeg'><source src='audio/BBC/"+searchedCurAlbum+"/"+searchedCurAudioWav+"' type='audio/wav'> Your browser does not support the audio element. </audio>";
+
+            var searchedCurLyrics = albums[albumIndex].tracks[trackIndex].lyrics;
+            document.getElementById("player").innerHTML += "<p>"+searchedCurLyrics+"</p>";
+        }
+
+        //onclick remove the last character in the string in the search container
+        function deleteLetter(){
+            var searchHold = document.getElementById('search-container').value;
+            document.getElementById('search-container').value = searchHold.substring(0,(searchHold.length - 1));
+            doSearch();
+        }
+
+        //remove entire string from search container, clear player div, and move do search container div behind main panels
+        function resetLetter(){
+            document.getElementById("player").innerHTML = "";
+            document.getElementById('search-container').value = "";
+            document.getElementById("search-container").style.borderColor = "red";
+            document.getElementById("do-search-container").style.zIndex = "-1";
+        }
+
+        //when the body is initially loaded run get albums to populate first div with list of albums from music.js
+        function onLoad(){
+            getAlbums();
+        }
+
+        function getAlbums(){
+            document.getElementById("album-select").innerHTML = "";
+            for(var i=0;i<albums.length;i++){
+                document.getElementById("album-select").innerHTML += "<option>" + albums[i].title + "</option>";
+            }
+        }
+
+        //get all tracks for selected album from album-select div
+        function getTracks(){
+            var currentAlbum = document.getElementById("album-select").selectedIndex;
+            var numTracks = albums[currentAlbum].tracks.length;
+            document.getElementById("track-select").innerHTML = "";
+
+           for(var x=0;x<numTracks;x++){
+               document.getElementById("track-select").innerHTML += "<option>" + albums[currentAlbum].tracks[x].title; + "</option>";
+           }
+        }
+
+        //calls functions to create player containing artwork, audio and lyrics based upon choosing an album from list, then choosing track
+        function getPlayer(){
+            document.getElementById("player").innerHTML = "";
+            getPlayerArtwork();
+            getPlayerAudio();
+            getPlayerLyrics();
+        }
+
+        function getPlayerArtwork(){
+            var playerCurrentAlbum = document.getElementById("album-select").selectedIndex;
+            var curArt = albums[playerCurrentAlbum].artwork;
+            document.getElementById("player").innerHTML += "<img src='artwork/"+curArt+".jpg' alt='"+curArt+"'>";
+        }
+
+        function getPlayerLyrics(){
+            var playerCurrentAlbum = document.getElementById("album-select").selectedIndex;
+            var playerCurrentTrack = document.getElementById("track-select").selectedIndex;
+            var curLyrics = albums[playerCurrentAlbum].tracks[playerCurrentTrack].lyrics;
+            document.getElementById("player").innerHTML += "<p>"+curLyrics+"</p>";
+        }
+
+        //retrieve file exensions for audio, manipulate string to accomodate .wav file extension as well
+        function getPlayerAudio(){
+            var playerCurrentAlbum = document.getElementById("album-select").selectedIndex;
+            var playerCurrentTrack = document.getElementById("track-select").selectedIndex;
+            var CurAlbTxt = albums[playerCurrentAlbum].title;
+            var CurTraTxt = albums[playerCurrentAlbum].tracks[playerCurrentTrack].mp3;
+            var CurTraTxtWav = CurTraTxt.substring(0,(CurTraTxt.indexOf("."))) + ".wav";
+            document.getElementById("player").innerHTML += "<audio controls='controls'><source src='audio/BBC/"+CurAlbTxt+"/"+CurTraTxt+"' type='audio/mpeg'><source src='audio/BBC/"+CurAlbTxt+"/"+CurTraTxtWav+"' type='audio/wav'> Your browser does not support the audio element. </audio>";
+        }
+
+    </script>
+
+    <style type="text/css"> /*Most CSS styling defined here within style tags within head tags */
+        .main-container{
+            margin: 0 auto;
+            position: relative;
+            width: 970px;
+            height: 800px;
+            text-align: center;
+            border: 1px solid black;
+            border-radius: 5px;
+            background-color: #000000;
+        }
+
+        .panel{
+            vertical-align: top;
+            display: inline-block;
+            width: 316px;
+            height: 496px;
+            margin-top: 4px;
+            border: 1px solid black;
+            border-radius: 5px;
+            background-color: #E6E6FA;
+            z-index: 0;
+        }
+
+        .keyboard-container{
+            display: inline-block;
+            width: calc(100% - 8px);
+            height: 288px;
+            margin-top: 4px;
+            border: 1px solid black;
+            border-radius: 5px;
+            background-color: #E6E6FA;
+        }
+
+        .keyboard-button{
+            height: 65px;
+            width: 65px;
+            padding: 0px;
+            margin: 5px;
+            text-align: center;
+            font-size: 30px;
+        }
+
+        #search-container{
+            margin-top: 15px;
+            margin-bottom: 10px;
+            font-size: 30px;
+            border-color: red;
+        }
+
+        #do-search-container{
+            position: absolute;
+            width: 638px;
+            height: 496px;
+            border: 1px solid black;
+            border-radius: 5px;
+            background-color: #E6E6FA;
+            left: 4px;
+            top: 5px;
+            z-index: -1;
+        }
+
+        #do-search-select{
+            height: 496px;
+            width: 638px;
+            background-color: #E6E6FA;
+            font-size: 30px;
+            border: 0;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+
+        .select1{
+            height: 496px;
+            width: 316px;
+            background-color: #E6E6FA;
+            font-size: 30px;
+            border: 0;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+
+    </style>
+</head>
+
+<body onload="onLoad()"><!--All Document Objects are defined here, assigned Id's and or classes and given eventhandlers that call javascript functions in order to dynamically generate HTML -->
+
+	<div class='main-container' id='main-container'>
+		<div class='panel' id='album'><!--div containing select containing all albums from music.js -->
+			<select class='select1' id="album-select" size="2" onclick="getTracks()">
+            </select>
+		</div>
+
+		<div class='panel' id='track'><!--div containing select containing all tracks in selected album from music.js -->
+			<select class='select1' id="track-select" size="2" onclick="getPlayer()">
+            </select>
+		</div>
+
+		<div class='panel' id='player'><!--div containing an image, audio player and string of lyrics corresponding to selected track -->
+		</div>
+
+		<div class='keyboard-container' id='keyboard'><!--div containing on screen keyboard composed of buttons that allow user to manipulate a search container and filter tracks by specified string -->
+			<input type='text' id='search-container' placeholder='search'/>
+            <input type='button' value='&#8592; Back1' onclick='deleteLetter()' style='height: 50px; width: 130px; padding: 0px; margin-left: 10px; text-align: center; font-size: 30px;'/>
+            <input type='button' id='search-reset' value='Reset' onclick='resetLetter()' style='height: 50px; width: 130px; padding: 0px; margin-left: 10px; text-align: center; font-size: 30px;'/>
+            <br>
+            <input type='button' class='keyboard-button' value='Q' onclick='inputLetter("Q")'/>
+            <input type='button' class='keyboard-button' value='W' onclick='inputLetter("W")'/>
+            <input type='button' class='keyboard-button' value='E' onclick='inputLetter("E")'/>
+            <input type='button' class='keyboard-button' value='R' onclick='inputLetter("R")'/>
+            <input type='button' class='keyboard-button' value='T' onclick='inputLetter("T")'/>
+            <input type='button' class='keyboard-button' value='Y' onclick='inputLetter("Y")'/>
+            <input type='button' class='keyboard-button' value='U' onclick='inputLetter("U")'/>
+            <input type='button' class='keyboard-button' value='I' onclick='inputLetter("I")'/>
+            <input type='button' class='keyboard-button' value='O' onclick='inputLetter("O")'/>
+            <input type='button' class='keyboard-button' value='P' onclick='inputLetter("P")'/>
+            <br>
+            <input type='button' class='keyboard-button' value='A' onclick='inputLetter("A")'/>
+            <input type='button' class='keyboard-button' value='S' onclick='inputLetter("S")'/>
+            <input type='button' class='keyboard-button' value='D' onclick='inputLetter("D")'/>
+            <input type='button' class='keyboard-button' value='F' onclick='inputLetter("F")'/>
+            <input type='button' class='keyboard-button' value='G' onclick='inputLetter("G")'/>
+            <input type='button' class='keyboard-button' value='H' onclick='inputLetter("H")'/>
+            <input type='button' class='keyboard-button' value='J' onclick='inputLetter("J")'/>
+            <input type='button' class='keyboard-button' value='K' onclick='inputLetter("K")'/>
+            <input type='button' class='keyboard-button' value='L' onclick='inputLetter("L")'/>
+            <br>
+            <input type='button' class='keyboard-button' value='Z' onclick='inputLetter("Z")'/>
+            <input type='button' class='keyboard-button' value='X' onclick='inputLetter("X")'/>
+            <input type='button' class='keyboard-button' value='C' onclick='inputLetter("C")'/>
+            <input type='button' class='keyboard-button' value='V' onclick='inputLetter("V")'/>
+            <input type='button' class='keyboard-button' value='B' onclick='inputLetter("B")'/>
+            <input type='button' class='keyboard-button' value='N' onclick='inputLetter("N")'/>
+            <input type='button' class='keyboard-button' value='M' onclick='inputLetter("M")'/>
+            <input type='button' value='Space' onclick='inputLetter(" ")' style='height: 65px; width: 130px; padding: 0px; margin: 5px; text-align: center; font-size: 30px;'/>
+                        
+		</div>
+        
+        <div id='do-search-container'><!--div that is hidden unless user starts searching tracks by string using on screen keyboard, contains all tracks that have either matching title or lyrics -->
+            <select id='do-search-select' size='2' onclick='getSearchedPlayer()'>
+            </select>
+        </div>
+	</div>
+
+</body>
+
+</html>
